@@ -17,7 +17,7 @@ public class HttpConfigurationException extends RuntimeException {
         super(cause);
     }
 
-    public HttpConfigurationException(String message, Throwable cause, boolean enableSuppression, boolean wriableStackkTrace) {
-        super(message, cause, enableSuppression, wriableStackkTrace);
+    public HttpConfigurationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
     }
 }

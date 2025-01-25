@@ -4,62 +4,54 @@ import com.bektur.config.util.Json;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 
 public class ConfigurationManager {
 
     private static ConfigurationManager myConfigurationManager;
     private static Configuration myCurrentConfiguration;
 
-    private ConfigurationManager() {
-
-    }
+    private ConfigurationManager() {}
 
     public static ConfigurationManager getInstance() {
-        if(myConfigurationManager == null)
+        if (myConfigurationManager == null) {
             myConfigurationManager = new ConfigurationManager();
+        }
         return myConfigurationManager;
     }
 
     public void loadConfigurationFile(String filePath) {
-        FileReader fileReader = null;
-        try {
-            fileReader = new FileReader(filePath);
-        } catch (FileNotFoundException e) {
-            throw new HttpConfigurationException(e);
-        }
-        StringBuffer sb = new StringBuffer();
-        int i;
-        while(true){
-            try {
-                if (!((i = fileReader.read()) != 1)) break;
-            } catch (IOException e) {
-                throw new HttpConfigurationException(e);
-            }
-            sb.append((char)i);
-        }
-        JsonNode conf = null;
-        try {
-            conf = Json.parse(sb.toString());
-        } catch (JsonProcessingException e) {
-            throw new HttpConfigurationException("Error parsing the Configuration File!");
-        }
-        try {
-            myCurrentConfiguration = Json.fromJson(conf, Configuration.class);
-        } catch (JsonProcessingException e) {
-            throw new HttpConfigurationException("Error parsing the Configuration File, internal!");
+        // Load file as a resource
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filePath);
+        if (inputStream == null) {
+            throw new HttpConfigurationException("Configuration file not found: " + filePath);
         }
 
-    }
-    // Return current loaded Configuration
-    public Configuration getCurrentConfiguration() {
-        if(myCurrentConfiguration == null) {
-            throw new HttpConfigurationException("No Configuration Set!");
-        }else {
-            return myCurrentConfiguration;
+        // Read file contents
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+
+            System.out.println("Loaded config: " + sb.toString()); // Debugging
+
+            // Parse JSON
+            JsonNode conf = Json.parse(sb.toString());
+            myCurrentConfiguration = Json.fromJson(conf, Configuration.class);
+
+        } catch (JsonProcessingException e) {
+            throw new HttpConfigurationException("Error parsing the Configuration File!", e);
+        } catch (IOException e) {
+            throw new HttpConfigurationException("Error reading the Configuration File!", e);
         }
+    }
+
+    public Configuration getCurrentConfiguration() {
+        if (myCurrentConfiguration == null) {
+            throw new HttpConfigurationException("No Configuration Set!");
+        }
+        return myCurrentConfiguration;
     }
 }
